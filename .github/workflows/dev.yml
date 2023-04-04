@@ -2,7 +2,7 @@
 
 name: dev workflow
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
@@ -66,21 +66,25 @@ jobs:
       - name: list files
         run: ls -l .
 
-      - uses: codecov/codecov-action@v1
-        with:
-          fail_ci_if_error: true
-          files: coverage.xml
-
       - name: Build wheels and source tarball
         run: |
           poetry version $(poetry version --short)-dev.$GITHUB_RUN_NUMBER
           poetry version --short
           poetry build
 
-      - name: publish to Test PyPI
-        uses: pypa/gh-action-pypi-publish@master
+      - name: Generate coverage report
+        run: |
+            coverage run --source taobao_web_auto
+            coverage combine
+            coverage xml -i
+        env:
+            COVERAGE_RUN: True
+
+      - name: Upload report to Codecov
+        uses: codecov/codecov-action@v2
         with:
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN}}
-          repository_url: https://test.pypi.org/legacy/
-          skip_existing: true
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: coverage.xml
+
+
+
